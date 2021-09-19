@@ -1,140 +1,109 @@
 const express = require("express");
 const app = express();
-const mysql = require("mysql");
+const fileUpload = require("express-fileupload");
 const cors = require("cors");
-const port = 3500;
-app.use(cors());
+const mysql = require("mysql");
+
+// порт
+const port = 8010;
+const path = require("path");
+// имортируем для получение в формате json
 app.use(express.json());
+app.use(fileUpload());
+app.use(cors());
 
-const db = mysql.createConnection({
-    // user: "root",
-    // host: "localhost:27015",
-    // password: "",
-    // database: "employeeSystem",
-    host: "localhost",
-    user: "root",
-    database: "employeeSystem",
-    password: "root"
+// подкулючение к база данных
+const connection = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "root",
+  database: "twitter",
 });
 
+// добавление пост к база данных
+app.post("/api/post/add", function (req, res) {
+  const params = req.body;
 
-// app.post("/create", (req, res) => {
-//     const post_text = req.body.post_text;
-//     const post_img = req.body.post_img;
-//     // const avatar = req.body.avatar;
-
-//     db.query(
-//         "INSERT INTO posts (post_text, post_img) VALUES (?,?)", [post_text, post_img],
-//         (err, result) => {
-//             if (err) {
-//                 console.log(err);
-//             } else {
-//                 res.send("Values Inserted");
-//             }
-//         }
-//     );
-// });
-
-app.post("/api/posts/add", function(req, res) {
-    var params = req.body;
-
-    const imageFile = req.files.post_img;
-    imageFile.mv(path.join(__dirname + "/uploads/") + imageFile.name, (err) => {
-        if (err) {
-            console.log("Ошибка при загрузка файла", err);
-        }
-    });
-    const post = {
-        user_id: params.userId,
-        user_name: params.username,
-        post_text: params.post_text,
-        post_img: imageFile.name,
-        post_like: Number(0),
-    };
-    connection.query(
-        "INSERT INTO posts (user_id , user_name, post_text , post_img, post_like) VALUE (? ,? , ? , ?, ?)", [
-            post.user_id,
-            post.user_name,
-            post.post_text,
-            post.post_img,
-            post.post_like,
-        ],
-        function(error, results) {
-            if (error) throw error;
-            res.json("done");
-        }
-    );
+  const imageFile = req.files.post_image;
+  imageFile.mv(path.join(__dirname + "/uploads/") + imageFile.name, (err) => {
+    if (err) {
+      console.log("Ошибка при загрузка файла", err);
+    }
+  });
+  const post = {
+    user_id: params.user_id,
+    user_name: params.username,
+    post_text: params.post_text,
+    post_img: imageFile.name,
+    post_like: Number(0),
+  };
+  connection.query(
+    "INSERT INTO posts (user_id , user_name, post_text , post_img, post_like) VALUE (? ,? , ? , ?, ?)",
+    [
+      post.user_id,
+      post.user_name,
+      post.post_text,
+      post.post_img,
+      post.post_like,
+    ],
+    function (error, results) {
+      if (error) throw error;
+      res.json("done");
+    }
+  );
 });
 
-// app.get("/posts", (req, res) => {
-//     const post_text = req.body.post_text;
-//     const post_img = req.body.post_img;
-//     const post_like = req.body.post_like;
-
-//     db.query(
-//         "SELECT * FROM posts", [post_text, post_img, post_like],
-//         (err, result) => {
-//             if (err) {
-//                 console.log(err);
-//             } else {
-//                 res.send(result);
-//             }
-//         }
-//     );
-// });
-
+// получение пости из База данных
 app.get("/api/posts", (req, res) => {
-    db.query("SELECT * FROM posts", (err, rows) => {
-        if (err) {
-            console.log(err);
-        } else {
-            res.send(rows);
-        }
-    });
-});
-//'UPDATE mettwoch SET ? WHERE ?', [{ mettmeister: mettmeister }, { mettwoch_id: mettwochId }])
-app.put("/api/posts/:id ", (req, res) => {
-    const id = req.body.id;
-    const post_text = req.body.post_text;
-    db.query(
-        "UPDATE posts SET post_text = ? WHERE id = ?", [post_text, id],
-        (err, result) => {
-            if (err) {
-                console.log(err);
-            } else {
-                res.send(result);
-            }
-        }
-    );
+  db.query("SELECT * FROM posts", (err, rows) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.send(rows);
+    }
+  });
 });
 
-app.delete("/api/posts/:id", (req, res) => {
-    const id = req.params.id;
-    db.query("DELETE FROM posts WHERE id = ?", id, (err, result) => {
-        if (err) {
-            console.log(err);
-        } else {
-            res.send(result);
-        }
-    });
+// изменение поста по id
+app.put("/api/post/edit/:id", (req, res) => {
+  const params = req.body;
+  const idPost = req.params.id;
+  const imageFile = req.files.post_image;
+
+  imageFile.mv(path.join(__dirname + "/uploads/") + imageFile.name, (err) => {
+    if (err) {
+      console.log("Ошибка при загрузка файла", err);
+    }
+  });
+
+  const post = {
+    post_text: params.post_text,
+    post_img: imageFile.name,
+  };
+
+  const queryUpdate = "UPDATE posts SET post_text = ?, post_img =?  WHERE id=?";
+  connection.query(
+    queryUpdate,
+    [post.post_text, post.post_img, idPost],
+    function (error, results) {
+      if (error) throw error;
+      res.json("update done");
+    }
+  );
 });
 
-// app.post('/like/:level/:name', function(req, res){
-//     db.query("SELECT * from posts where " + req.body.level + " like '%" + req.body.name + "%'", function(err, rows, fields) {
-//     if (!err){
-//     var row = rows;
-//     res.send(row);
-//     console.log(req.params);
-//      console.log('The solution is: ', rows);}
-//     else{
-//      console.log('Error while performing Query.');
-//     console.log(err);}
-//     });
-//     });
+app.delete("/api/post/delete/:id", (req, res) => {
+  const id = req.params.id;
+  connection.query("DELETE FROM posts WHERE id = ?", id, (err, result) => {
+    if (err) {
+      console.log(err);
+    } else {
+      res.send("deleet done");
+    }
+  });
+});
 
+// запускаем сервер в порт 8010
 app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`);
+  console.log(`sever zapushen v  http://localhost:${port}`);
 });
-// app.listen(3500, () => {
-//     console.log("Yey, your server is running on port 3500");
-// });`Example app listening at http://localhost:${port}`
