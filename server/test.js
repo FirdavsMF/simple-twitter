@@ -23,7 +23,7 @@ db.connect(err => {
     }
 })
 
-let query = "SELECT * FROM users";
+let query = "SELECT * FROM posts";
 
 db.query(query, (err, result, field) => {
     console.log(result);
