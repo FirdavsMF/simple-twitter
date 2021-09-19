@@ -38,7 +38,7 @@ const db = mysql.createConnection({
 app.post("/api/posts/add", function(req, res) {
     var params = req.body;
 
-    const imageFile = req.files.post_image;
+    const imageFile = req.files.post_img;
     imageFile.mv(path.join(__dirname + "/uploads/") + imageFile.name, (err) => {
         if (err) {
             console.log("Ошибка при загрузка файла", err);
@@ -48,7 +48,7 @@ app.post("/api/posts/add", function(req, res) {
         user_id: params.userId,
         user_name: params.username,
         post_text: params.post_text,
-        post_image: imageFile.name,
+        post_img: imageFile.name,
         post_like: Number(0),
     };
     connection.query(
@@ -84,7 +84,7 @@ app.post("/api/posts/add", function(req, res) {
 // });
 
 app.get("/api/posts", (req, res) => {
-    db.query("SELECT * FROM users", (err, rows) => {
+    db.query("SELECT * FROM posts", (err, rows) => {
         if (err) {
             console.log(err);
         } else {
@@ -92,7 +92,7 @@ app.get("/api/posts", (req, res) => {
         }
     });
 });
-
+//'UPDATE mettwoch SET ? WHERE ?', [{ mettmeister: mettmeister }, { mettwoch_id: mettwochId }])
 app.put("/api/posts/:id ", (req, res) => {
     const id = req.body.id;
     const post_text = req.body.post_text;
@@ -110,7 +110,7 @@ app.put("/api/posts/:id ", (req, res) => {
 
 app.delete("/api/posts/:id", (req, res) => {
     const id = req.params.id;
-    db.query("DELETE FROM users WHERE id = ?", id, (err, result) => {
+    db.query("DELETE FROM posts WHERE id = ?", id, (err, result) => {
         if (err) {
             console.log(err);
         } else {
@@ -119,6 +119,18 @@ app.delete("/api/posts/:id", (req, res) => {
     });
 });
 
+// app.post('/like/:level/:name', function(req, res){
+//     db.query("SELECT * from posts where " + req.body.level + " like '%" + req.body.name + "%'", function(err, rows, fields) {
+//     if (!err){
+//     var row = rows;
+//     res.send(row);
+//     console.log(req.params);
+//      console.log('The solution is: ', rows);}
+//     else{
+//      console.log('Error while performing Query.');
+//     console.log(err);}
+//     });
+//     });
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
